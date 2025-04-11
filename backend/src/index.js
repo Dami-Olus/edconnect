@@ -12,6 +12,10 @@ app.use(express.json());
 const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth', authRoutes);
 
+const protectedRoutes = require('./routes/protectedRoutes');
+app.use('/api/protected', protectedRoutes);
+
+
 
 app.get('/', (req, res) => {
   res.send('API is working ✅');

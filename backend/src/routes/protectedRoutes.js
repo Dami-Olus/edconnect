@@ -14,4 +14,8 @@ router.get('/student-dashboard', protect, allowRoles('student'), (req, res) => {
   res.json({ message: 'Welcome, Student! Let’s start learning.' });
 });
 
+router.get('/parent-dashboard', protect, allowRoles('parent'), (req, res) => {
+  res.json({ message: 'Welcome, Parent! Ready to check your childs progress?.' });
+});
+
 module.exports = router;
