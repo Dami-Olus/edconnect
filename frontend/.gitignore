@@ -1,0 +1,5 @@
+# .env and build files
+.env.local
+node_modules/
+.next/
+out/
