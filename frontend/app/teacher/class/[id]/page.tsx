@@ -4,11 +4,19 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import axios from 'axios';
 
+type StudentType = {
+  _id: string;
+  name: string;
+  email: string;
+};
+
 type ClassType = {
   _id: string;
   title: string;
   description: string;
+  students: StudentType[];
 };
+
 
 export default function ClassDetailPage() {
   const { id } = useParams();
@@ -78,6 +86,45 @@ const [feedback, setFeedback] = useState('');
   </button>
   {feedback && <p className="text-sm text-gray-700">{feedback}</p>}
 </form>
+
+<h2 className="text-lg font-semibold mt-6 mb-2">Students</h2>
+<ul className="space-y-2">
+  {classInfo?.students?.length === 0 && <p>No students yet.</p>}
+  {classInfo?.students?.map((student) => (
+    <li key={student._id} className="border p-3 rounded flex justify-between items-center">
+      <div>
+        <p className="font-semibold">{student.name}</p>
+        <p className="text-sm text-gray-500">{student.email}</p>
+      </div>
+      <button
+        onClick={async () => {
+          try {
+            await axios.post(
+              `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/classes/${id}/remove-student`,
+              { studentId: student._id },
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+            setFeedback('Student removed');
+            setClassInfo((prev: any) => ({
+              ...prev,
+              students: prev.students.filter((s: any) => s._id !== student._id),
+            }));
+          } catch (err) {
+            console.error('Remove failed', err);
+          }
+        }}
+        className="text-red-600 hover:underline text-sm"
+      >
+        Remove
+      </button>
+    </li>
+  ))}
+</ul>
+
 
     </div>
   );
