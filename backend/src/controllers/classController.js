@@ -1,4 +1,6 @@
-const Class = require('../models/Class');
+const Class = require("../models/Class");
+const User = require("../models/User");
+const mongoose = require('mongoose');
 
 // POST /api/classes
 exports.createClass = async (req, res) => {
@@ -10,7 +12,9 @@ exports.createClass = async (req, res) => {
     });
     res.status(201).json(newClass);
   } catch (err) {
-    res.status(500).json({ message: 'Failed to create class', error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to create class", error: err.message });
   }
 };
 
@@ -20,7 +24,7 @@ exports.getTeacherClasses = async (req, res) => {
     const classes = await Class.find({ teacher: req.user._id });
     res.json(classes);
   } catch (err) {
-    res.status(500).json({ message: 'Failed to fetch classes' });
+    res.status(500).json({ message: "Failed to fetch classes" });
   }
 };
 
@@ -32,35 +36,68 @@ exports.updateClass = async (req, res) => {
       { title: req.body.title, description: req.body.description },
       { new: true }
     );
-    if (!updated) return res.status(404).json({ message: 'Class not found' });
+    if (!updated) return res.status(404).json({ message: "Class not found" });
     res.json(updated);
   } catch (err) {
-    res.status(500).json({ message: 'Update failed' });
+    res.status(500).json({ message: "Update failed" });
   }
 };
 
 // DELETE /api/classes/:id
 exports.deleteClass = async (req, res) => {
   try {
-    const deleted = await Class.findOneAndDelete({ _id: req.params.id, teacher: req.user._id });
-    if (!deleted) return res.status(404).json({ message: 'Class not found' });
-    res.json({ message: 'Class deleted' });
+    const deleted = await Class.findOneAndDelete({
+      _id: req.params.id,
+      teacher: req.user._id,
+    });
+    if (!deleted) return res.status(404).json({ message: "Class not found" });
+    res.json({ message: "Class deleted" });
   } catch (err) {
-    res.status(500).json({ message: 'Deletion failed' });
+    res.status(500).json({ message: "Deletion failed" });
   }
 };
 
 // POST /api/classes/:id/add-student
 exports.addStudentToClass = async (req, res) => {
+  const { studentIdOrEmail } = req.body;
+  console.log('Received:', studentIdOrEmail);
+
   try {
+    let student;
+
+    if (mongoose.Types.ObjectId.isValid(studentIdOrEmail)) {
+      student = await User.findOne({
+        _id: studentIdOrEmail,
+        role: 'student',
+      });
+    }
+
+    // If no student found by _id, or input is not ObjectId, try email
+    if (!student) {
+      student = await User.findOne({
+        email: studentIdOrEmail,
+        role: 'student',
+      });
+    }
+
+    if (!student) {
+      console.log('Student not found');
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
     const updated = await Class.findOneAndUpdate(
       { _id: req.params.id, teacher: req.user._id },
-      { $addToSet: { students: req.body.studentId } },
+      { $addToSet: { students: student._id } },
       { new: true }
     );
-    if (!updated) return res.status(404).json({ message: 'Class not found' });
+
+    if (!updated) {
+      return res.status(404).json({ message: 'Class not found or unauthorized' });
+    }
+
     res.json(updated);
   } catch (err) {
-    res.status(500).json({ message: 'Failed to add student', error: err.message });
+    console.error('Add student error:', err.message);
+    res.status(500).json({ message: 'Failed to add student' });
   }
 };
