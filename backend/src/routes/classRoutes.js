@@ -17,5 +17,18 @@ router.get('/', getTeacherClasses);             // GET: Fetch teacher's classes
 router.put('/:id', updateClass);                // PUT: Update class details
 router.delete('/:id', deleteClass);             // DELETE: Remove class
 router.post('/:id/add-student', addStudentToClass); // POST: Add a student
+router.get('/:id', async (req, res) => {
+  try {
+    const singleClass = await Class.findOne({
+      _id: req.params.id,
+      teacher: req.user._id,
+    });
+    if (!singleClass) return res.status(404).json({ message: 'Class not found' });
+    res.json(singleClass);
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching class', error: err.message });
+  }
+});
+
 
 module.exports = router;
