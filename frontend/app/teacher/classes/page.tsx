@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { useEffect, useState } from "react";
+import axios from "axios";
 
 type ClassType = {
   _id: string;
@@ -12,20 +12,24 @@ type ClassType = {
 export default function TeacherClassesPage() {
   const [classes, setClasses] = useState<ClassType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ title: '', description: '' });
+  const [form, setForm] = useState({ title: "", description: "" });
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   const fetchClasses = async () => {
     try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/classes`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/classes`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       setClasses(res.data);
     } catch (err) {
-      console.error('Failed to fetch classes', err);
+      console.error("Failed to fetch classes", err);
     } finally {
       setLoading(false);
     }
@@ -51,12 +55,28 @@ export default function TeacherClassesPage() {
           },
         }
       );
-      setForm({ title: '', description: '' });
+      setForm({ title: "", description: "" });
       fetchClasses();
     } catch (err) {
-      console.error('Class creation failed', err);
+      console.error("Class creation failed", err);
     }
   };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this class?')) return;
+  
+    try {
+      await axios.delete(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/classes/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      fetchClasses(); // refresh list after deletion
+    } catch (err) {
+      console.error('Failed to delete class', err);
+    }
+  };
+  
 
   if (loading) return <p>Loading...</p>;
 
@@ -81,16 +101,30 @@ export default function TeacherClassesPage() {
           className="border p-2 w-full"
           rows={3}
         />
-        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
+        <button
+          type="submit"
+          className="bg-blue-600 text-white px-4 py-2 rounded"
+        >
           Create Class
         </button>
       </form>
 
       <ul className="space-y-2">
         {classes.map((c) => (
-          <li key={c._id} className="p-4 border rounded shadow-sm">
-            <h3 className="text-lg font-bold">{c.title}</h3>
-            <p>{c.description}</p>
+          <li
+            key={c._id}
+            className="p-4 border rounded shadow-sm flex justify-between items-center"
+          >
+            <div>
+              <h3 className="text-lg font-bold">{c.title}</h3>
+              <p>{c.description}</p>
+            </div>
+            <button
+              onClick={() => handleDelete(c._id)}
+              className="text-red-600 hover:underline text-sm"
+            >
+              Delete
+            </button>
           </li>
         ))}
       </ul>
