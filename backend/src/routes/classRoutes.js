@@ -9,7 +9,12 @@ const {
 } = require('../controllers/classController');
 const { protect, allowRoles } = require('../middlewares/authMiddleware');
 const Class = require('../models/Class');
-const upload = require('../middlewares/uploadMiddleware');
+const { Upload } = require('@aws-sdk/lib-storage');
+const s3Client = require('../config/s3Client');
+const multer = require('multer');
+const upload = multer({ dest: 'temp/' }); // basic local temp storage
+const fs = require('fs');
+const path = require('path');
 
 // All routes are protected and only accessible by teachers
 router.use(protect, allowRoles('teacher'));
@@ -65,25 +70,42 @@ router.post('/:id/remove-student', async (req, res) => {
 
 
 
-router.post(
-  '/:id/upload-material',
-  protect,
-  allowRoles('teacher'),
-  upload.single('file'),
-  async (req, res) => {
-    try {
-      const updated = await Class.findOneAndUpdate(
-        { _id: req.params.id, teacher: req.user._id },
-        { $push: { materials: req.file.location } },
-        { new: true }
-      );
-      res.json(updated);
-    } catch (err) {
-      console.error('Upload error:', err.message);
-      res.status(500).json({ message: 'Upload failed' });
-    }
+router.post('/:id/upload-material', protect, allowRoles('teacher'), upload.single('file'), async (req, res) => {
+  try {
+    const fileStream = fs.createReadStream(req.file.path);
+    const fileKey = `materials/${Date.now()}-${req.file.originalname}`;
+
+    const uploadParams = {
+      Bucket: process.env.AWS_BUCKET,
+      Key: fileKey,
+      Body: fileStream,
+      ContentType: req.file.mimetype,
+      
+    };
+
+    const parallelUpload = new Upload({
+      client: s3Client,
+      params: uploadParams,
+    });
+
+    const result = await parallelUpload.done();
+
+    // Clean up temp file
+    fs.unlinkSync(req.file.path);
+
+    // Save the uploaded file URL to the class
+    const updated = await Class.findOneAndUpdate(
+      { _id: req.params.id, teacher: req.user._id },
+      { $push: { materials: result.Location } },
+      { new: true }
+    );
+
+    res.json(updated);
+  } catch (err) {
+    console.error('Upload error:', err.message);
+    res.status(500).json({ message: 'Upload failed', error: err.message });
   }
-);
+});
 
 
 module.exports = router;

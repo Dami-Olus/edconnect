@@ -23,6 +23,8 @@ export default function ClassDetailPage() {
   const [loading, setLoading] = useState(true);
   const [studentIdOrEmail, setStudentIdOrEmail] = useState("");
   const [feedback, setFeedback] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+const [uploading, setUploading] = useState(false);
 
   const token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -47,6 +49,34 @@ export default function ClassDetailPage() {
     if (id) fetchClass();
   }, [id]);
 
+  const handleUpload = async () => {
+    if (!selectedFile) return alert('Please select a file');
+  
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+  
+    try {
+      setUploading(true);
+      const res = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/classes/${id}/upload-material`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+      setUploading(false);
+      alert('File uploaded successfully!');
+      setSelectedFile(null);
+    } catch (err) {
+      setUploading(false);
+      console.error('Upload failed:', err);
+      alert('Upload failed');
+    }
+  };
+
   if (loading) return <p>Loading...</p>;
   if (!classInfo) return <p>Class not found.</p>;
 
@@ -54,6 +84,21 @@ export default function ClassDetailPage() {
     <div>
       <h1 className="text-2xl font-bold mb-2">{classInfo.title}</h1>
       <p>{classInfo.description}</p>
+      <div className="my-6 space-y-2">
+  <input
+    type="file"
+    accept="application/pdf,image/*,video/*"
+    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+    className="border p-2 rounded w-full"
+  />
+  <button
+    onClick={handleUpload}
+    className="bg-blue-600 text-white px-4 py-2 rounded"
+    disabled={uploading}
+  >
+    {uploading ? 'Uploading...' : 'Upload Material'}
+  </button>
+</div>
       <h2 className="text-lg font-semibold mt-6 mb-2">Add Student</h2>
       <form
         onSubmit={async (e) => {
