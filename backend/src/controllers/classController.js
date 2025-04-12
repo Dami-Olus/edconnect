@@ -12,6 +12,7 @@ exports.createClass = async (req, res) => {
       title: req.body.title,
       description: req.body.description,
       teacher: req.user._id,
+      meetingLink: `https://meet.jit.si/gec-class-${Date.now()}`
     });
     res.status(201).json(newClass);
   } catch (err) {
