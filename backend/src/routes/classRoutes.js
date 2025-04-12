@@ -9,7 +9,7 @@ const {
 } = require('../controllers/classController');
 const { protect, allowRoles } = require('../middlewares/authMiddleware');
 const Class = require('../models/Class');
-
+const upload = require('../middlewares/uploadMiddleware');
 
 // All routes are protected and only accessible by teachers
 router.use(protect, allowRoles('teacher'));
@@ -63,6 +63,27 @@ router.post('/:id/remove-student', async (req, res) => {
 //   }
 // });
 
+
+
+router.post(
+  '/:id/upload-material',
+  protect,
+  allowRoles('teacher'),
+  upload.single('file'),
+  async (req, res) => {
+    try {
+      const updated = await Class.findOneAndUpdate(
+        { _id: req.params.id, teacher: req.user._id },
+        { $push: { materials: req.file.location } },
+        { new: true }
+      );
+      res.json(updated);
+    } catch (err) {
+      console.error('Upload error:', err.message);
+      res.status(500).json({ message: 'Upload failed' });
+    }
+  }
+);
 
 
 module.exports = router;
