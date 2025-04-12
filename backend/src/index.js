@@ -15,6 +15,8 @@ app.use('/api/auth', authRoutes);
 const protectedRoutes = require('./routes/protectedRoutes');
 app.use('/api/protected', protectedRoutes);
 
+const classRoutes = require('./routes/classRoutes');
+app.use('/api/classes', classRoutes);
 
 
 app.get('/', (req, res) => {
