@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Link from "next/link";
 
 type ClassType = {
   _id: string;
@@ -168,7 +169,9 @@ const [editForm, setEditForm] = useState({ title: '', description: '' });
     ) : (
       <div className="flex justify-between items-start">
         <div>
-          <h3 className="text-lg font-bold">{c.title}</h3>
+        <Link href={`/teacher/class/${c._id}`}>
+  <h3 className="text-lg font-bold text-blue-600 hover:underline">{c.title}</h3>
+</Link>
           <p>{c.description}</p>
         </div>
         <div className="space-x-3 text-sm">
