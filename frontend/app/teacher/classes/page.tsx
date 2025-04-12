@@ -13,6 +13,9 @@ export default function TeacherClassesPage() {
   const [classes, setClasses] = useState<ClassType[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ title: "", description: "" });
+  const [editId, setEditId] = useState<string | null>(null);
+const [editForm, setEditForm] = useState({ title: '', description: '' });
+
 
   const token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -76,6 +79,25 @@ export default function TeacherClassesPage() {
       console.error('Failed to delete class', err);
     }
   };
+
+  const handleUpdate = async (id: string) => {
+    try {
+      await axios.put(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/classes/${id}`,
+        editForm,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setEditId(null);
+      fetchClasses();
+    } catch (err) {
+      console.error('Update failed', err);
+    }
+  };
+  
   
 
   if (loading) return <p>Loading...</p>;
@@ -110,23 +132,67 @@ export default function TeacherClassesPage() {
       </form>
 
       <ul className="space-y-2">
-        {classes.map((c) => (
-          <li
-            key={c._id}
-            className="p-4 border rounded shadow-sm flex justify-between items-center"
+      {classes.map((c) => (
+  <li key={c._id} className="p-4 border rounded shadow-sm space-y-1">
+    {editId === c._id ? (
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleUpdate(c._id);
+        }}
+        className="space-y-2"
+      >
+        <input
+          name="title"
+          value={editForm.title}
+          onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+          className="border p-2 w-full"
+        />
+        <textarea
+          name="description"
+          value={editForm.description}
+          onChange={(e) =>
+            setEditForm({ ...editForm, description: e.target.value })
+          }
+          className="border p-2 w-full"
+        />
+        <div className="space-x-2">
+          <button type="submit" className="bg-green-600 text-white px-3 py-1 rounded">
+            Save
+          </button>
+          <button type="button" onClick={() => setEditId(null)} className="text-sm text-gray-600">
+            Cancel
+          </button>
+        </div>
+      </form>
+    ) : (
+      <div className="flex justify-between items-start">
+        <div>
+          <h3 className="text-lg font-bold">{c.title}</h3>
+          <p>{c.description}</p>
+        </div>
+        <div className="space-x-3 text-sm">
+          <button
+            onClick={() => {
+              setEditId(c._id);
+              setEditForm({ title: c.title, description: c.description });
+            }}
+            className="text-blue-600 hover:underline"
           >
-            <div>
-              <h3 className="text-lg font-bold">{c.title}</h3>
-              <p>{c.description}</p>
-            </div>
-            <button
-              onClick={() => handleDelete(c._id)}
-              className="text-red-600 hover:underline text-sm"
-            >
-              Delete
-            </button>
-          </li>
-        ))}
+            Edit
+          </button>
+          <button
+            onClick={() => handleDelete(c._id)}
+            className="text-red-600 hover:underline"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    )}
+  </li>
+))}
+
       </ul>
     </div>
   );
