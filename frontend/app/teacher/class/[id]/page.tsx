@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import axios from "axios";
-import { useDropzone } from 'react-dropzone';
-
+import { useDropzone } from "react-dropzone";
+import Link from "next/link";
 
 type StudentType = {
   _id: string;
@@ -26,77 +26,73 @@ export default function ClassDetailPage() {
   const [studentIdOrEmail, setStudentIdOrEmail] = useState("");
   const [feedback, setFeedback] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-const [uploading, setUploading] = useState(false);
-const [materials, setMaterials] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [materials, setMaterials] = useState<string[]>([]);
 
-const { getRootProps, getInputProps, isDragActive } = useDropzone({
-  accept: {
-    'application/pdf': [],
-    'image/*': [],
-    'video/*': [],
-  },
-  onDrop: async (acceptedFiles) => {
-    const file = acceptedFiles[0];
-    if (!file) return;
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    accept: {
+      "application/pdf": [],
+      "image/*": [],
+      "video/*": [],
+    },
+    onDrop: async (acceptedFiles) => {
+      const file = acceptedFiles[0];
+      if (!file) return;
 
-    const formData = new FormData();
-    formData.append('file', file);
+      const formData = new FormData();
+      formData.append("file", file);
 
-    try {
-      setUploading(true);
-      const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/classes/${id}/upload-material`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-      setMaterials(res.data.materials);
-    } catch (err) {
-      alert('Upload failed');
-    } finally {
-      setUploading(false);
-    }
-  },
-});
-
+      try {
+        setUploading(true);
+        const res = await axios.post(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/classes/${id}/upload-material`,
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+        setMaterials(res.data.materials);
+      } catch (err) {
+        alert("Upload failed");
+      } finally {
+        setUploading(false);
+      }
+    },
+  });
 
   const token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
-    useEffect(() => {
-      const fetchClass = async () => {
-        try {
-          const res = await axios.get(
-            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/classes/${id}`,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
-          setClassInfo(res.data);
-          setMaterials(res.data.materials); // 👈 Add this here
-        } catch (err) {
-          console.error("Failed to load class info", err);
-        } finally {
-          setLoading(false);
-        }
-      };
-    
-      if (id) fetchClass();
-    }, [id]);
-    
+  useEffect(() => {
+    const fetchClass = async () => {
+      try {
+        const res = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/classes/${id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setClassInfo(res.data);
+        setMaterials(res.data.materials); // 👈 Add this here
+      } catch (err) {
+        console.error("Failed to load class info", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  
+    if (id) fetchClass();
+  }, [id]);
 
   const handleUpload = async () => {
-    if (!selectedFile) return alert('Please select a file');
-  
+    if (!selectedFile) return alert("Please select a file");
+
     const formData = new FormData();
-    formData.append('file', selectedFile);
-  
+    formData.append("file", selectedFile);
+
     try {
       setUploading(true);
       const res = await axios.post(
@@ -105,22 +101,20 @@ const { getRootProps, getInputProps, isDragActive } = useDropzone({
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
+            "Content-Type": "multipart/form-data",
           },
         }
       );
       setUploading(false);
-      alert('File uploaded successfully!');
+      alert("File uploaded successfully!");
       setSelectedFile(null);
       setMaterials(res.data.materials); // after successful upload
     } catch (err) {
       setUploading(false);
-      console.error('Upload failed:', err);
-      alert('Upload failed');
+      console.error("Upload failed:", err);
+      alert("Upload failed");
     }
   };
-
-  
 
   if (loading) return <p>Loading...</p>;
   if (!classInfo) return <p>Class not found.</p>;
@@ -129,65 +123,88 @@ const { getRootProps, getInputProps, isDragActive } = useDropzone({
     <div>
       <h1 className="text-2xl font-bold mb-2">{classInfo.title}</h1>
       <p>{classInfo.description}</p>
+      <div className="flex gap-4 mt-4">
+      <Link
+        href={`/teacher/class/${id}/assignments`}
+        className="inline-block mt-4 text-blue-600 underline hover:text-blue-800"
+      >
+        View Assignments
+      </Link>
+      </div>
+
       <div className="my-6 space-y-2">
-  <input
-    type="file"
-    accept="application/pdf,image/*,video/*"
-    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-    className="border p-2 rounded w-full"
-  />
-  <button
-    onClick={handleUpload}
-    className="bg-blue-600 text-white px-4 py-2 rounded"
-    disabled={uploading}
-  >
-    {uploading ? 'Uploading...' : 'Upload Material'}
-  </button>
-</div>
-<div {...getRootProps()} className="border-2 border-dashed p-6 rounded text-center cursor-pointer bg-gray-100 mt-4">
-  <input {...getInputProps()} />
-  {isDragActive ? <p>Drop the file here…</p> : <p>Drag & drop or click to upload</p>}
-</div>
-{uploading && <p className="text-sm text-gray-500 mt-2">Uploading...</p>}
+        <input
+          type="file"
+          accept="application/pdf,image/*,video/*"
+          onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+          className="border p-2 rounded w-full"
+        />
+        <button
+          onClick={handleUpload}
+          className="bg-blue-600 text-white px-4 py-2 rounded"
+          disabled={uploading}
+        >
+          {uploading ? "Uploading..." : "Upload Material"}
+        </button>
+      </div>
+      <div
+        {...getRootProps()}
+        className="border-2 border-dashed p-6 rounded text-center cursor-pointer bg-gray-100 mt-4"
+      >
+        <input {...getInputProps()} />
+        {isDragActive ? (
+          <p>Drop the file here…</p>
+        ) : (
+          <p>Drag & drop or click to upload</p>
+        )}
+      </div>
+      {uploading && <p className="text-sm text-gray-500 mt-2">Uploading...</p>}
 
-<h2 className="text-lg font-semibold mt-6 mb-2">Uploaded Materials</h2>
-{materials.length === 0 ? (
-  <p className="text-gray-500">No materials uploaded yet.</p>
-) : (
-  <ul className="space-y-2">
-    {materials.map((url, index) => {
-      const extension = url.split('.').pop()?.toLowerCase();
+      <h2 className="text-lg font-semibold mt-6 mb-2">Uploaded Materials</h2>
+      {materials.length === 0 ? (
+        <p className="text-gray-500">No materials uploaded yet.</p>
+      ) : (
+        <ul className="space-y-2">
+          {materials.map((url, index) => {
+            const extension = url.split(".").pop()?.toLowerCase();
 
-      const getFileIcon = () => {
-        if (!extension) return '📁';
-        if (['pdf'].includes(extension)) return '📄';
-        if (['jpg', 'jpeg', 'png', 'gif'].includes(extension)) return '🖼️';
-        if (['mp4', 'mov', 'avi'].includes(extension)) return '🎥';
-        return '📁';
-      };
+            const getFileIcon = () => {
+              if (!extension) return "📁";
+              if (["pdf"].includes(extension)) return "📄";
+              if (["jpg", "jpeg", "png", "gif"].includes(extension))
+                return "🖼️";
+              if (["mp4", "mov", "avi"].includes(extension)) return "🎥";
+              return "📁";
+            };
 
-      return (
-        <li key={index} className="flex items-center justify-between border p-3 rounded">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">{getFileIcon()}</span>
-            <a
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 underline"
-            >
-              Preview
-            </a>
-          </div>
-          <a href={url} download className="text-sm text-gray-600 hover:underline">
-            Download
-          </a>
-        </li>
-      );
-    })}
-  </ul>
-)}
-
+            return (
+              <li
+                key={index}
+                className="flex items-center justify-between border p-3 rounded"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">{getFileIcon()}</span>
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline"
+                  >
+                    Preview
+                  </a>
+                </div>
+                <a
+                  href={url}
+                  download
+                  className="text-sm text-gray-600 hover:underline"
+                >
+                  Download
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      )}
 
       <h2 className="text-lg font-semibold mt-6 mb-2">Add Student</h2>
       <form
