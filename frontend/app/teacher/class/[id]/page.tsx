@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import axios from "axios";
+import { useDropzone } from 'react-dropzone';
+
 
 type StudentType = {
   _id: string;
@@ -25,29 +27,69 @@ export default function ClassDetailPage() {
   const [feedback, setFeedback] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 const [uploading, setUploading] = useState(false);
+const [materials, setMaterials] = useState<string[]>([]);
+
+const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  accept: {
+    'application/pdf': [],
+    'image/*': [],
+    'video/*': [],
+  },
+  onDrop: async (acceptedFiles) => {
+    const file = acceptedFiles[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      setUploading(true);
+      const res = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/classes/${id}/upload-material`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+      setMaterials(res.data.materials);
+    } catch (err) {
+      alert('Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  },
+});
+
 
   const token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
-  useEffect(() => {
-    const fetchClass = async () => {
-      try {
-        const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/classes/${id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        setClassInfo(res.data);
-      } catch (err) {
-        console.error("Failed to load class info", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+    useEffect(() => {
+      const fetchClass = async () => {
+        try {
+          const res = await axios.get(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/classes/${id}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+          setClassInfo(res.data);
+          setMaterials(res.data.materials); // 👈 Add this here
+        } catch (err) {
+          console.error("Failed to load class info", err);
+        } finally {
+          setLoading(false);
+        }
+      };
+    
+      if (id) fetchClass();
+    }, [id]);
+    
 
-    if (id) fetchClass();
-  }, [id]);
+  
 
   const handleUpload = async () => {
     if (!selectedFile) return alert('Please select a file');
@@ -70,12 +112,15 @@ const [uploading, setUploading] = useState(false);
       setUploading(false);
       alert('File uploaded successfully!');
       setSelectedFile(null);
+      setMaterials(res.data.materials); // after successful upload
     } catch (err) {
       setUploading(false);
       console.error('Upload failed:', err);
       alert('Upload failed');
     }
   };
+
+  
 
   if (loading) return <p>Loading...</p>;
   if (!classInfo) return <p>Class not found.</p>;
@@ -99,6 +144,51 @@ const [uploading, setUploading] = useState(false);
     {uploading ? 'Uploading...' : 'Upload Material'}
   </button>
 </div>
+<div {...getRootProps()} className="border-2 border-dashed p-6 rounded text-center cursor-pointer bg-gray-100 mt-4">
+  <input {...getInputProps()} />
+  {isDragActive ? <p>Drop the file here…</p> : <p>Drag & drop or click to upload</p>}
+</div>
+{uploading && <p className="text-sm text-gray-500 mt-2">Uploading...</p>}
+
+<h2 className="text-lg font-semibold mt-6 mb-2">Uploaded Materials</h2>
+{materials.length === 0 ? (
+  <p className="text-gray-500">No materials uploaded yet.</p>
+) : (
+  <ul className="space-y-2">
+    {materials.map((url, index) => {
+      const extension = url.split('.').pop()?.toLowerCase();
+
+      const getFileIcon = () => {
+        if (!extension) return '📁';
+        if (['pdf'].includes(extension)) return '📄';
+        if (['jpg', 'jpeg', 'png', 'gif'].includes(extension)) return '🖼️';
+        if (['mp4', 'mov', 'avi'].includes(extension)) return '🎥';
+        return '📁';
+      };
+
+      return (
+        <li key={index} className="flex items-center justify-between border p-3 rounded">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">{getFileIcon()}</span>
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 underline"
+            >
+              Preview
+            </a>
+          </div>
+          <a href={url} download className="text-sm text-gray-600 hover:underline">
+            Download
+          </a>
+        </li>
+      );
+    })}
+  </ul>
+)}
+
+
       <h2 className="text-lg font-semibold mt-6 mb-2">Add Student</h2>
       <form
         onSubmit={async (e) => {
