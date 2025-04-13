@@ -64,3 +64,24 @@ exports.gradeSubmission = async (req, res) => {
     res.status(500).json({ message: 'Grading failed', error: err.message });
   }
 };
+
+exports.getStudentAssignments = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    // Find classes the student is enrolled in
+    const classes = await Class.find({ students: userId }).select('_id');
+
+    const classIds = classes.map((cls) => cls._id);
+
+    // Fetch assignments for those classes
+    const assignments = await Assignment.find({ class: { $in: classIds } })
+      .sort({ dueDate: 1 })
+      .populate('class', 'title');
+
+    res.json(assignments);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch student assignments', error: err.message });
+  }
+};
+

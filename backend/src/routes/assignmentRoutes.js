@@ -11,6 +11,12 @@ const { protect, allowRoles } = require('../middlewares/authMiddleware');
 // Teacher creates assignment
 router.post('/', protect, allowRoles('teacher'), createAssignment);
 
+const { getStudentAssignments } = require('../controllers/assignmentController');
+
+// Student: get their own assignments
+router.get('/student', protect, allowRoles('student'), getStudentAssignments);
+
+
 // Get assignments for a class
 router.get('/class/:id', protect, getAssignmentsForClass);
 
