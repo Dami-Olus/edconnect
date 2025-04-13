@@ -18,6 +18,10 @@ app.use('/api/protected', protectedRoutes);
 const classRoutes = require('./routes/classRoutes');
 app.use('/api/classes', classRoutes);
 
+const assignmentRoutes = require('./routes/assignmentRoutes');
+app.use('/api/assignments', assignmentRoutes);
+
+
 
 app.get('/', (req, res) => {
   res.send('API is working ✅');
