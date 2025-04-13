@@ -1,81 +1,83 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
+import Link from "next/link";
 
-export default function CreateAssignmentPage() {
+type Assignment = {
+  _id: string;
+  title: string;
+  description?: string;
+  dueDate: string;
+  createdAt: string;
+};
+
+export default function AssignmentListPage() {
   const { id } = useParams();
   const router = useRouter();
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [dueDate, setDueDate] = useState("");
-  const [loading, setLoading] = useState(false);
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
-    try {
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assignments`,
-        {
-          title,
-          description,
-          dueDate,
-          classId: id,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+  useEffect(() => {
+    const fetchAssignments = async () => {
+      try {
+        const res = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/assignments/class/${id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setAssignments(res.data);
+      } catch (err) {
+        console.error("Failed to fetch assignments", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      alert("Assignment created!");
-      router.push(`/teacher/class/${id}`);
-    } catch (err) {
-      console.error("Error creating assignment:", err);
-      alert("Failed to create assignment");
-    } finally {
-      setLoading(false);
-    }
-  };
+    if (id) fetchAssignments();
+  }, [id]);
 
   return (
-    <div className="max-w-xl mx-auto mt-10">
-      <h1 className="text-2xl font-bold mb-4">Create Assignment</h1>
-      <form onSubmit={handleCreate} className="space-y-4">
-        <input
-          type="text"
-          placeholder="Assignment Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-          className="border p-2 w-full"
-        />
-        <textarea
-          placeholder="Description (optional)"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          className="border p-2 w-full"
-        />
-        <input
-          type="date"
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
-          required
-          className="border p-2 w-full"
-        />
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-          disabled={loading}
-        >
-          {loading ? "Creating..." : "Create Assignment"}
-        </button>
-      </form>
+    <div className="max-w-3xl mx-auto py-8">
+      <h1 className="text-2xl font-bold mb-4">Assignments</h1>
+
+      <Link
+        href={`/teacher/class/${id}/assignments/create`}
+        className="bg-blue-600 text-white px-4 py-2 rounded mb-4 inline-block"
+      >
+        + Create New Assignment
+      </Link>
+
+      {loading ? (
+        <p>Loading...</p>
+      ) : assignments.length === 0 ? (
+        <p>No assignments created yet.</p>
+      ) : (
+        <ul className="space-y-3 mt-4">
+          {assignments.map((a) => (
+            <li
+              key={a._id}
+              className="p-4 border rounded shadow-sm flex justify-between items-center"
+            >
+              <div>
+                <h2 className="font-semibold text-lg">{a.title}</h2>
+                <p className="text-sm text-gray-600">Due: {new Date(a.dueDate).toDateString()}</p>
+              </div>
+              <Link
+                href={`/teacher/class/${id}/assignments/${a._id}`}
+                className="text-blue-600 underline"
+              >
+                View
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
