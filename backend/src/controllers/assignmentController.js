@@ -1,5 +1,10 @@
+const fs = require('fs');
+const { Upload } = require('@aws-sdk/lib-storage');
+const s3Client = require('../config/s3Client');
 const Assignment = require('../models/Assignment');
 const Class = require('../models/Class');
+
+
 
 exports.createAssignment = async (req, res) => {
   try {
@@ -31,15 +36,38 @@ exports.submitAssignment = async (req, res) => {
     const assignment = await Assignment.findById(req.params.id);
     if (!assignment) return res.status(404).json({ message: 'Assignment not found' });
 
+    const file = req.file;
+    if (!file) return res.status(400).json({ message: 'No file uploaded' });
+
+    const fileStream = fs.createReadStream(file.path);
+    const fileKey = `submissions/${Date.now()}-${file.originalname}`;
+
+    const uploadParams = {
+      Bucket: process.env.AWS_BUCKET,
+      Key: fileKey,
+      Body: fileStream,
+      ContentType: file.mimetype,
+    };
+
+    const parallelUpload = new Upload({
+      client: s3Client,
+      params: uploadParams,
+    });
+
+    const result = await parallelUpload.done();
+    fs.unlinkSync(file.path); // cleanup temp
+
     assignment.submissions.push({
       student: req.user._id,
-      fileUrl: req.body.fileUrl,
+      fileUrl: result.Location,
       submittedAt: new Date(),
     });
 
     await assignment.save();
-    res.json({ message: 'Submission successful' });
+
+    res.status(201).json({ message: 'Submission successful', fileUrl: result.Location });
   } catch (err) {
+    console.error('Submit assignment error:', err.message);
     res.status(500).json({ message: 'Submission failed', error: err.message });
   }
 };
@@ -85,3 +113,14 @@ exports.getStudentAssignments = async (req, res) => {
   }
 };
 
+exports.getAssignmentById = async (req, res) => {
+  try {
+    const assignment = await Assignment.findById(req.params.id);
+    if (!assignment) {
+      return res.status(404).json({ message: 'Assignment not found' });
+    }
+    res.json(assignment);
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching assignment', error: err.message });
+  }
+};

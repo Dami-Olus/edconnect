@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Link from "next/link";
 
 type Assignment = {
   _id: string;
   title: string;
   description?: string;
   dueDate: string;
-  class: string;
+  class: { _id: string; title: string }; // 👈 this replaces class: string
 };
 
 export default function StudentAssignments() {
@@ -45,12 +46,16 @@ export default function StudentAssignments() {
         <p>No assignments assigned yet.</p>
       ) : (
         <ul className="space-y-3">
-          {assignments.map((a) => (
-            <li key={a._id} className="p-4 border rounded">
-              <h3 className="font-semibold text-lg">{a.title}</h3>
-              <p className="text-sm text-gray-600">Due: {new Date(a.dueDate).toDateString()}</p>
-              <p className="text-sm">{a.description}</p>
-            </li>
+          {assignments.map((assignment) => (
+            <Link
+            key={assignment._id}
+            href={`/student/class/${assignment.class._id}/assignments/${assignment._id}`}
+            className="block p-4 border rounded hover:bg-gray-50"
+          >
+            <h3 className="font-semibold text-lg">{assignment.title}</h3>
+            <p className="text-sm text-gray-600">{assignment.description}</p>
+            <p className="text-xs text-gray-400">Due: {new Date(assignment.dueDate).toLocaleDateString()}</p>
+          </Link>
           ))}
         </ul>
       )}
