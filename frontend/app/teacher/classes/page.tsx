@@ -1,39 +1,33 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import axios from "axios";
-import Link from "next/link";
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+import Layout from '@/components/Layout';
+import Input from '@/components/Input';
+import Button from '@/components/Button';
+import Link from 'next/link';
 
-type ClassType = {
+interface ClassType {
   _id: string;
   title: string;
   description: string;
-};
+}
 
 export default function TeacherClassesPage() {
   const [classes, setClasses] = useState<ClassType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ title: "", description: "" });
-  const [editId, setEditId] = useState<string | null>(null);
-const [editForm, setEditForm] = useState({ title: '', description: '' });
+  const [form, setForm] = useState({ title: '', description: '' });
 
-
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
   const fetchClasses = async () => {
     try {
-      const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/classes`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/classes`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setClasses(res.data);
     } catch (err) {
-      console.error("Failed to fetch classes", err);
+      console.error('Failed to fetch classes', err);
     } finally {
       setLoading(false);
     }
@@ -43,160 +37,68 @@ const [editForm, setEditForm] = useState({ title: '', description: '' });
     fetchClasses();
   }, []);
 
-  const handleChange = (e: any) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await axios.post(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/classes`,
         { ...form },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      setForm({ title: "", description: "" });
+      setForm({ title: '', description: '' });
       fetchClasses();
     } catch (err) {
-      console.error("Class creation failed", err);
+      console.error('Class creation failed', err);
     }
   };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this class?')) return;
-  
-    try {
-      await axios.delete(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/classes/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      fetchClasses(); // refresh list after deletion
-    } catch (err) {
-      console.error('Failed to delete class', err);
-    }
-  };
-
-  const handleUpdate = async (id: string) => {
-    try {
-      await axios.put(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/classes/${id}`,
-        editForm,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      setEditId(null);
-      fetchClasses();
-    } catch (err) {
-      console.error('Update failed', err);
-    }
-  };
-  
-  
-
-  if (loading) return <p>Loading...</p>;
 
   return (
-    <div>
-      <h2 className="text-xl font-semibold mb-4">My Classes</h2>
+    <Layout>
+      <div className="max-w-3xl mx-auto">
+        <h2 className="text-2xl font-bold mb-6">My Classes</h2>
 
-      <form onSubmit={handleSubmit} className="mb-6 space-y-2">
-        <input
-          name="title"
-          placeholder="Class Title"
-          value={form.title}
-          onChange={handleChange}
-          className="border p-2 w-full"
-          required
-        />
-        <textarea
-          name="description"
-          placeholder="Description"
-          value={form.description}
-          onChange={handleChange}
-          className="border p-2 w-full"
-          rows={3}
-        />
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-        >
-          Create Class
-        </button>
-      </form>
+        <form onSubmit={handleSubmit} className="mb-8 space-y-4">
+          <Input
+            name="title"
+            placeholder="Class Title"
+            value={form.title}
+            onChange={handleChange}
+            required
+          />
+          <textarea
+            name="description"
+            placeholder="Description"
+            value={form.description}
+            onChange={handleChange}
+            className="border p-2 rounded w-full"
+            rows={3}
+          />
+          <Button type="submit">Create Class</Button>
+        </form>
 
-      <ul className="space-y-2">
-      {classes.map((c) => (
-  <li key={c._id} className="p-4 border rounded shadow-sm space-y-1">
-    {editId === c._id ? (
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleUpdate(c._id);
-        }}
-        className="space-y-2"
-      >
-        <input
-          name="title"
-          value={editForm.title}
-          onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-          className="border p-2 w-full"
-        />
-        <textarea
-          name="description"
-          value={editForm.description}
-          onChange={(e) =>
-            setEditForm({ ...editForm, description: e.target.value })
-          }
-          className="border p-2 w-full"
-        />
-        <div className="space-x-2">
-          <button type="submit" className="bg-green-600 text-white px-3 py-1 rounded">
-            Save
-          </button>
-          <button type="button" onClick={() => setEditId(null)} className="text-sm text-gray-600">
-            Cancel
-          </button>
-        </div>
-      </form>
-    ) : (
-      <div className="flex justify-between items-start">
-        <div>
-        <Link href={`/teacher/class/${c._id}`}>
-  <h3 className="text-lg font-bold text-blue-600 hover:underline">{c.title}</h3>
-</Link>
-          <p>{c.description}</p>
-        </div>
-        <div className="space-x-3 text-sm">
-          <button
-            onClick={() => {
-              setEditId(c._id);
-              setEditForm({ title: c.title, description: c.description });
-            }}
-            className="text-blue-600 hover:underline"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => handleDelete(c._id)}
-            className="text-red-600 hover:underline"
-          >
-            Delete
-          </button>
-        </div>
+        {loading ? (
+          <p>Loading...</p>
+        ) : (
+          <ul className="space-y-4">
+            {classes.map((c) => (
+              <li key={c._id} className="p-4 border rounded shadow-sm">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <Link href={`/teacher/class/${c._id}`} className="text-lg font-semibold text-blue-600 hover:underline">
+                      {c.title}
+                    </Link>
+                    <p className="text-sm text-gray-700 mt-1">{c.description}</p>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
-    )}
-  </li>
-))}
-
-      </ul>
-    </div>
+    </Layout>
   );
 }
