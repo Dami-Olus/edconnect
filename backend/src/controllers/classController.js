@@ -1,9 +1,6 @@
 const Class = require("../models/Class");
 const User = require("../models/User");
-const mongoose = require('mongoose');
-
-
-
+const mongoose = require("mongoose");
 
 // POST /api/classes
 exports.createClass = async (req, res) => {
@@ -12,7 +9,7 @@ exports.createClass = async (req, res) => {
       title: req.body.title,
       description: req.body.description,
       teacher: req.user._id,
-      meetingLink: `https://meet.jit.si/gec-class-${Date.now()}`
+      meetingLink: `https://meet.jit.si/gec-class-${Date.now()}`,
     });
     res.status(201).json(newClass);
   } catch (err) {
@@ -64,7 +61,7 @@ exports.deleteClass = async (req, res) => {
 // POST /api/classes/:id/add-student
 exports.addStudentToClass = async (req, res) => {
   const { studentIdOrEmail } = req.body;
-  console.log('Received:', studentIdOrEmail);
+  console.log("Received:", studentIdOrEmail);
 
   try {
     let student;
@@ -72,7 +69,7 @@ exports.addStudentToClass = async (req, res) => {
     if (mongoose.Types.ObjectId.isValid(studentIdOrEmail)) {
       student = await User.findOne({
         _id: studentIdOrEmail,
-        role: 'student',
+        role: "student",
       });
     }
 
@@ -80,13 +77,13 @@ exports.addStudentToClass = async (req, res) => {
     if (!student) {
       student = await User.findOne({
         email: studentIdOrEmail,
-        role: 'student',
+        role: "student",
       });
     }
 
     if (!student) {
-      console.log('Student not found');
-      return res.status(404).json({ message: 'Student not found' });
+      console.log("Student not found");
+      return res.status(404).json({ message: "Student not found" });
     }
 
     const updated = await Class.findOneAndUpdate(
@@ -96,12 +93,29 @@ exports.addStudentToClass = async (req, res) => {
     );
 
     if (!updated) {
-      return res.status(404).json({ message: 'Class not found or unauthorized' });
+      return res
+        .status(404)
+        .json({ message: "Class not found or unauthorized" });
     }
 
     res.json(updated);
   } catch (err) {
-    console.error('Add student error:', err.message);
-    res.status(500).json({ message: 'Failed to add student' });
+    console.error("Add student error:", err.message);
+    res.status(500).json({ message: "Failed to add student" });
+  }
+};
+
+exports.getStudentClasses = async (req, res) => {
+  try {
+    const classes = await Class.find({ students: req.user._id }).populate(
+      "teacher",
+      "name email"
+    );
+    res.json(classes);
+    console.log(classes);
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to fetch student classes", error: err.message });
   }
 };

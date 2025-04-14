@@ -1,6 +1,7 @@
 "use client";
 
 import StudentAssignments from "@/components/StudentAssignments";
+import StudentClasses from "@/components/StudentClasses";
 import { useState } from "react";
 
 export default function StudentDashboard() {
@@ -11,7 +12,7 @@ export default function StudentDashboard() {
       <h1 className="text-2xl font-bold mb-6">Student Dashboard</h1>
 
       <div className="flex gap-6 border-b mb-6">
-        {["assignments", "live", "grades"].map((tab) => (
+        {["classes", "assignments", "live", "grades"].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -28,6 +29,7 @@ export default function StudentDashboard() {
       {activeTab === "assignments" && (
   <StudentAssignments />
 )}
+{activeTab === "classes" && <StudentClasses />}
 
         {activeTab === "live" && <p>🎥 Live class links will go here</p>}
         {activeTab === "grades" && <p>📊 Gradebook and feedback here</p>}
