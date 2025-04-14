@@ -1,5 +1,6 @@
 "use client";
 
+import DashboardHeader from "@/components/DashboardHeader";
 import StudentAssignments from "@/components/StudentAssignments";
 import StudentClasses from "@/components/StudentClasses";
 import { useState } from "react";
@@ -9,6 +10,7 @@ export default function StudentDashboard() {
 
   return (
     <div className="max-w-5xl mx-auto py-10">
+      <DashboardHeader />
       <h1 className="text-2xl font-bold mb-6">Student Dashboard</h1>
 
       <div className="flex gap-6 border-b mb-6">
