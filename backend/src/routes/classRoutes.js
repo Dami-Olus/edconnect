@@ -5,7 +5,8 @@ const {
   getTeacherClasses,
   updateClass,
   deleteClass,
-  addStudentToClass
+  addStudentToClass,
+  getStudentClasses
 } = require('../controllers/classController');
 const { protect, allowRoles } = require('../middlewares/authMiddleware');
 const Class = require('../models/Class');
@@ -17,13 +18,18 @@ const fs = require('fs');
 const path = require('path');
 
 // All routes are protected and only accessible by teachers
-router.use(protect, allowRoles('teacher'));
 
-router.post('/', createClass);                  // POST: Create a new class
-router.get('/', getTeacherClasses);             // GET: Fetch teacher's classes
-router.put('/:id', updateClass);                // PUT: Update class details
-router.delete('/:id', deleteClass);             // DELETE: Remove class
-router.post('/:id/add-student', addStudentToClass); // POST: Add a student
+router.post('/', protect, allowRoles('teacher'), createClass);
+router.get('/', protect, allowRoles('teacher'), getTeacherClasses);
+
+
+// Student: get all classes they're enrolled in
+router.get('/student', protect, allowRoles('student'), getStudentClasses);
+
+router.put('/:id', protect, allowRoles('teacher'), updateClass);
+router.delete('/:id', protect, allowRoles('teacher'), deleteClass);
+router.post('/:id/add-student', protect, allowRoles('teacher'), addStudentToClass);
+
 
 router.get('/:id', async (req, res) => {
 
