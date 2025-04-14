@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Link from "next/link";
+
 
 type ClassType = {
   _id: string;
@@ -45,14 +47,18 @@ export default function StudentClasses() {
         <p>You are not enrolled in any classes yet.</p>
       ) : (
         <ul className="space-y-3">
-          {classes.map((cls) => (
-            <li key={cls._id} className="p-4 border rounded">
-              <h3 className="text-lg font-bold">{cls.title}</h3>
-              <p className="text-sm text-gray-600">{cls.description}</p>
-              <p className="text-sm text-gray-500">Instructor: {cls.teacher?.name}</p>
-            </li>
-          ))}
-        </ul>
+  {classes.map((cls) => (
+    <li key={cls._id} className="p-4 border rounded hover:shadow">
+      <Link href={`/student/class/${cls._id}`}>
+        <div className="cursor-pointer">
+          <h3 className="text-lg font-bold">{cls.title}</h3>
+          <p className="text-sm text-gray-600">{cls.description}</p>
+          <p className="text-sm text-gray-500">Instructor: {cls.teacher?.name}</p>
+        </div>
+      </Link>
+    </li>
+  ))}
+</ul>
       )}
     </div>
   );
