@@ -103,19 +103,32 @@ exports.getStudentAssignments = async (req, res) => {
 
     // Find classes the student is enrolled in
     const classes = await Class.find({ students: userId }).select('_id');
-
     const classIds = classes.map((cls) => cls._id);
 
-    // Fetch assignments for those classes
+    // Fetch assignments and filter student's own submission
     const assignments = await Assignment.find({ class: { $in: classIds } })
       .sort({ dueDate: 1 })
-      .populate('class', 'title');
+      .populate('class', 'title')
+      .lean(); // lean to manipulate objects easily
 
-    res.json(assignments);
+    // Map through each assignment and attach the student's own submission
+    const assignmentsWithStudentSubmission = assignments.map((assignment) => {
+      const studentSubmission = assignment.submissions?.find(
+        (sub) => sub.student?.toString() === userId.toString()
+      );
+
+      return {
+        ...assignment,
+        mySubmission: studentSubmission || null,
+      };
+    });
+
+    res.json(assignmentsWithStudentSubmission);
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch student assignments', error: err.message });
   }
 };
+
 
 exports.getAssignmentById = async (req, res) => {
   try {
