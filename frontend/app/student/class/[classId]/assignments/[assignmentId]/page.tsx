@@ -21,6 +21,7 @@ export default function StudentAssignmentDetailPage() {
   const [uploading, setUploading] = useState(false);
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
+  // Fetch assignment details
   useEffect(() => {
     const fetchAssignment = async () => {
       try {
@@ -39,8 +40,9 @@ export default function StudentAssignmentDetailPage() {
     if (assignmentId) fetchAssignment();
   }, [assignmentId]);
 
+  // Handle file submission
   const handleUpload = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile) return alert('Please select a file');
 
     const formData = new FormData();
     formData.append('file', selectedFile);
@@ -57,9 +59,10 @@ export default function StudentAssignmentDetailPage() {
           },
         }
       );
-      alert('Submission uploaded!');
+      alert('Submission uploaded successfully!');
+      setSelectedFile(null);
     } catch (err) {
-      console.error('Upload failed', err);
+      console.error('Upload failed:', err);
       alert('Upload failed');
     } finally {
       setUploading(false);
@@ -73,9 +76,11 @@ export default function StudentAssignmentDetailPage() {
       ) : (
         <div className="max-w-3xl mx-auto py-8">
           <h1 className="text-2xl font-bold mb-2">{assignment.title}</h1>
-          <p className="text-gray-700 mb-2">{assignment.description}</p>
+          {assignment.description && (
+            <p className="text-gray-700 mb-2">{assignment.description}</p>
+          )}
           <p className="text-sm text-gray-500 mb-4">
-            Due: {new Date(assignment.dueDate).toDateString()}
+            Due: {new Date(assignment.dueDate).toLocaleDateString()}
           </p>
 
           {assignment.file && (
@@ -85,7 +90,7 @@ export default function StudentAssignmentDetailPage() {
               rel="noopener noreferrer"
               className="text-blue-600 underline mb-6 inline-block"
             >
-              Download Assignment File
+              📄 Download Assignment File
             </a>
           )}
 
