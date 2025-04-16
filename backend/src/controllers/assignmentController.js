@@ -74,6 +74,10 @@ exports.submitAssignment = async (req, res) => {
 
 exports.gradeSubmission = async (req, res) => {
   try {
+    console.log('Grade route hit');
+    console.log('Params:', req.params);
+    console.log('Body:', req.body);
+    
     const assignment = await Assignment.findById(req.params.assignmentId);
     if (!assignment) return res.status(404).json({ message: 'Assignment not found' });
 
@@ -115,12 +119,27 @@ exports.getStudentAssignments = async (req, res) => {
 
 exports.getAssignmentById = async (req, res) => {
   try {
-    const assignment = await Assignment.findById(req.params.id);
+    const assignment = await Assignment.findById(req.params.id).populate('submissions.student', 'name email'); ;
     if (!assignment) {
       return res.status(404).json({ message: 'Assignment not found' });
     }
     res.json(assignment);
   } catch (err) {
     res.status(500).json({ message: 'Error fetching assignment', error: err.message });
+  }
+};
+
+exports.getAssignmentWithSubmissions = async (req, res) => {
+  try {
+    const assignment = await Assignment.findById(req.params.assignmentId)
+  .populate('submissions.student', 'name email'); 
+
+    if (!assignment) {
+      return res.status(404).json({ message: 'Assignment not found' });
+    }
+
+    res.json(assignment);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch assignment', error: err.message });
   }
 };

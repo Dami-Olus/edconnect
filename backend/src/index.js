@@ -21,7 +21,8 @@ app.use('/api/classes', classRoutes);
 const assignmentRoutes = require('./routes/assignmentRoutes');
 app.use('/api/assignments', assignmentRoutes);
 
-
+const teacherRoutes = require('./routes/teacherRoutes');
+app.use('/api/teachers', teacherRoutes);
 
 app.get('/', (req, res) => {
   res.send('API is working ✅');
