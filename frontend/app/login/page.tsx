@@ -23,7 +23,15 @@ export default function LoginPage() {
     try {
       const data = await login(form.email, form.password);
       saveToken(data.token);
-      router.push('/dashboard');
+      localStorage.setItem('role', data.role);
+  
+      if (data.role === 'teacher') {
+        router.push('/teacher/dashboard');
+      } else if (data.role === 'student') {
+        router.push('/student/dashboard');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed');
     }
