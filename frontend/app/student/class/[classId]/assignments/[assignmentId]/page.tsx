@@ -6,12 +6,20 @@ import axios from 'axios';
 import Layout from '@/components/Layout';
 import Button from '@/components/Button';
 
+interface Submission {
+  fileUrl: string;
+  submittedAt: string;
+  grade?: number;
+  feedback?: string;
+}
+
 interface Assignment {
   _id: string;
   title: string;
   description?: string;
   dueDate: string;
   file?: string;
+  mySubmission?: Submission;
 }
 
 export default function StudentAssignmentDetailPage() {
@@ -21,7 +29,7 @@ export default function StudentAssignmentDetailPage() {
   const [uploading, setUploading] = useState(false);
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
-  // Fetch assignment details
+  // Fetch assignment details (with student submission)
   useEffect(() => {
     const fetchAssignment = async () => {
       try {
@@ -40,7 +48,6 @@ export default function StudentAssignmentDetailPage() {
     if (assignmentId) fetchAssignment();
   }, [assignmentId]);
 
-  // Handle file submission
   const handleUpload = async () => {
     if (!selectedFile) return alert('Please select a file');
 
@@ -61,6 +68,7 @@ export default function StudentAssignmentDetailPage() {
       );
       alert('Submission uploaded successfully!');
       setSelectedFile(null);
+      window.location.reload(); // Refresh to refetch and show submission status
     } catch (err) {
       console.error('Upload failed:', err);
       alert('Upload failed');
@@ -94,17 +102,35 @@ export default function StudentAssignmentDetailPage() {
             </a>
           )}
 
-          <div className="mt-6">
-            <h2 className="font-semibold text-lg mb-2">Submit your work</h2>
-            <input
-              type="file"
-              accept=".pdf,.doc,.docx"
-              onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-              className="mb-4"
-            />
-            <Button onClick={handleUpload} disabled={uploading}>
-              {uploading ? 'Uploading...' : 'Submit Assignment'}
-            </Button>
+          <div className="mt-6 space-y-4">
+            <h2 className="font-semibold text-lg">Submit your work</h2>
+
+            {assignment.mySubmission ? (
+              <div className="border p-4 rounded bg-green-50">
+                <p className="text-green-700 font-semibold mb-2">✅ Submission received</p>
+                <p className="text-sm">Submitted at: {new Date(assignment.mySubmission.submittedAt).toLocaleString()}</p>
+                <p className="text-sm">
+                  File: <a href={assignment.mySubmission.fileUrl} target="_blank" rel="noopener noreferrer" className="underline text-blue-600">View</a>
+                </p>
+                {assignment.mySubmission.grade !== undefined ? (
+                  <p className="text-sm mt-2 text-blue-700">Grade: {assignment.mySubmission.grade} / Feedback: {assignment.mySubmission.feedback}</p>
+                ) : (
+                  <p className="text-sm text-yellow-600 mt-2">Awaiting grading</p>
+                )}
+              </div>
+            ) : (
+              <>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                  className="mb-2"
+                />
+                <Button onClick={handleUpload} disabled={uploading}>
+                  {uploading ? 'Uploading...' : 'Submit Assignment'}
+                </Button>
+              </>
+            )}
           </div>
         </div>
       )}

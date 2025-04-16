@@ -4,12 +4,18 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
 
+type Submission = {
+  grade?: number;
+  feedback?: string;
+};
+
 type Assignment = {
   _id: string;
   title: string;
   description?: string;
   dueDate: string;
-  class: { _id: string; title: string }; // 👈 this replaces class: string
+  class: { _id: string; title: string };
+  mySubmission?: Submission;
 };
 
 export default function StudentAssignments() {
@@ -48,14 +54,36 @@ export default function StudentAssignments() {
         <ul className="space-y-3">
           {assignments.map((assignment) => (
             <Link
-            key={assignment._id}
-            href={`/student/class/${assignment.class._id}/assignments/${assignment._id}`}
-            className="block p-4 border rounded hover:bg-gray-50"
-          >
-            <h3 className="font-semibold text-lg">{assignment.title}</h3>
-            <p className="text-sm text-gray-600">{assignment.description}</p>
-            <p className="text-xs text-gray-400">Due: {new Date(assignment.dueDate).toLocaleDateString()}</p>
-          </Link>
+              key={assignment._id}
+              href={`/student/class/${assignment.class._id}/assignments/${assignment._id}`}
+              className="block p-4 border rounded hover:bg-gray-50"
+            >
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="font-semibold text-lg">{assignment.title}</h3>
+                  <p className="text-sm text-gray-600">{assignment.description}</p>
+                  <p className="text-xs text-gray-500 mb-1">
+                    Class: {assignment.class.title}
+                  </p>
+                  <p className="text-xs text-gray-400 mb-1">
+                    Due: {new Date(assignment.dueDate).toLocaleDateString()}
+                  </p>
+
+                  {assignment.mySubmission ? (
+                    assignment.mySubmission.grade !== undefined ? (
+                      <p className="text-sm text-green-700">
+                        ✅ Grade: {assignment.mySubmission.grade} — Feedback:{" "}
+                        {assignment.mySubmission.feedback || "N/A"}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-yellow-600">⏳ Submitted, awaiting grade</p>
+                    )
+                  ) : (
+                    <p className="text-sm text-red-600">❌ Not submitted</p>
+                  )}
+                </div>
+              </div>
+            </Link>
           ))}
         </ul>
       )}
